@@ -17,7 +17,8 @@ def data_submit(jwc_session, class_list, try_count, time_out, scan_class):
         data = class_list[class_type]['data']
         submit_type = class_list[class_type]['submitType']
         for classes in class_list[class_type]['class']:
-            if not classes['sub_class'] or check_only_sub_class(class_list[class_type]['class']):
+            if not classes['sub_class'] or check_only_sub_class(
+                    class_list[class_type]['class']):
                 count = 0
                 while count < try_count:
                     key_name = '%s->%s(%s):%s_%s_%d' % (
@@ -25,15 +26,21 @@ def data_submit(jwc_session, class_list, try_count, time_out, scan_class):
                         classes['课程ID'], classes['教师'], classes['教学班'], count)
 
                     if submit_type == 'RepairGroup_Submit':
-                        thread[key_name] = class_repair_group_submit(jwc_session, classes['课程ID'], classes['教学班'], data,
-                                                                     time_out)
+                        thread[key_name] = class_repair_group_submit(
+                            jwc_session, classes['课程ID'], classes['教学班'], data,
+                            time_out)
                     elif submit_type == 'EngExpandSubmit':
-                        thread[key_name] = class_eng_expand_submit(jwc_session, classes['课程ID'], classes['教学班'], data,
-                                                                   time_out)
+                        thread[key_name] = class_eng_expand_submit(
+                            jwc_session, classes['课程ID'], classes['教学班'], data,
+                            time_out)
                     elif submit_type == 'ZX_Submit':
-                        thread[key_name] = class_submit(jwc_session, classes['课程ID'], classes['教学班'], data, time_out)
+                        thread[key_name] = class_submit(
+                            jwc_session, classes['课程ID'], classes['教学班'], data,
+                            time_out)
                     else:
-                        thread[key_name] = class_submit(jwc_session, classes['课程ID'], classes['教学班'], data, time_out)
+                        thread[key_name] = class_submit(
+                            jwc_session, classes['课程ID'], classes['教学班'], data,
+                            time_out)
 
                     count = count + 1
 
@@ -79,8 +86,12 @@ def data_submit(jwc_session, class_list, try_count, time_out, scan_class):
             result_str[i] = '当前选课不得选修 (脚本将会自动移除此抢课课程）'
         elif '添加成功' in result_str[i]:
             result_str[i] = '选课添加成功（脚本将会自动移除此抢课课程）'
+        elif "抢课时间超时！" in result_str[i]:
+            result_str[i] += ' 本轮抢课已经超时（设定的超时时间为' + time_out + '秒）'
+        elif "请求时出现错误" in result_str[i]:
+            result_str[i] += ' 请求时出现错误（可能是网络问题）'
         else:
-            result_str[i] += ' （未知反馈，非乱码请上报开发者，谢谢）'
+            result_str[i] += ' （未知错误）'
 
     time_end = time.time()
     print('%s:%.3f%s' % ('\n本次抢课总耗时', time_end - time_start, 's'))
@@ -96,32 +107,41 @@ def check_only_sub_class(class_info_list):
 
 def class_submit(jwc_session, course_id, teaching_class, data, time_out):
     url = config.jwc_server + 'Servlet/AddCourseSelectModel.ashx'
-    return class_data_submit(jwc_session, url, course_id, teaching_class, data, time_out)
+    return class_data_submit(jwc_session, url, course_id, teaching_class, data,
+                             time_out)
 
 
 def class_zx_submit(jwc_session, course_id, teaching_class, data, time_out):
     return class_submit(jwc_session, course_id, teaching_class, data, time_out)
 
 
-def class_repair_group_submit(jwc_session, course_id, teaching_class, data, time_out):
+def class_repair_group_submit(jwc_session, course_id, teaching_class, data,
+                              time_out):
     url = config.jwc_server + 'Servlet/AddRepairGroupCourseSelectModel.ashx'
-    return class_data_submit(jwc_session, url, course_id, teaching_class, data, time_out)
+    return class_data_submit(jwc_session, url, course_id, teaching_class, data,
+                             time_out)
 
 
-def class_eng_expand_submit(jwc_session, course_id, teaching_class, data, time_out):
+def class_eng_expand_submit(jwc_session, course_id, teaching_class, data,
+                            time_out):
     url = config.jwc_server + 'Servlet/AddEngCourseSelectModel.ashx'
-    return class_data_submit(jwc_session, url, course_id, teaching_class, data, time_out)
+    return class_data_submit(jwc_session, url, course_id, teaching_class, data,
+                             time_out)
 
 
-def class_data_submit(jwc_session, url, course_id, teaching_class, data, time_out):
+def class_data_submit(jwc_session, url, course_id, teaching_class, data,
+                      time_out):
     data['courseID'] = course_id
     data['teachingClass'] = teaching_class
-    return NetWorkThread(post_class_data, args=(jwc_session, url, copy.deepcopy(data), time_out))
+    return NetWorkThread(
+        post_class_data,
+        args=(jwc_session, url, copy.deepcopy(data), time_out))
 
 
 def post_class_data(jwc_session, url, data, time_out):
     try:
-        return jwc_session.post(url, data, timeout=time_out, headers=get_header())
+        return jwc_session.post(
+            url, data, timeout=time_out, headers=get_header())
     except TimeoutError:
         return "抢课时间超时！"
     except:
@@ -145,44 +165,53 @@ class NetWorkThread(Thread):
 def get_header():
     global jwc_header
     if jwc_header is None:
-        head_user_agent = ['Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko',
-                           'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 '
-                           'Safari/537.36',
-                           'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR '
-                           '3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; rv:11.0) like Gecko)',
-                           'Mozilla/5.0 (Windows; U; Windows NT 5.2) Gecko/2008070208 Firefox/3.0.1',
-                           'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070309 Firefox/2.0.0.3',
-                           'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070803 Firefox/1.5.0.12',
-                           'Opera/9.27 (Windows NT 5.2; U; zh-cn)',
-                           'Mozilla/5.0 (Macintosh; PPC Mac OS X; U; en) Opera 8.0',
-                           'Opera/8.0 (Macintosh; PPC Mac OS X; U; en)',
-                           'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.12) Gecko/20080219 '
-                           'Firefox/2.0.0.12 Navigator/9.0.0.6',
-                           'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Win64; x64; Trident/4.0)',
-                           'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
-                           'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; SLCC2; .NET CLR '
-                           '2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; InfoPath.2; '
-                           '.NET4.0C; .NET4.0E)',
-                           'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) '
-                           'Maxthon/4.0.6.2000 '
-                           'Chrome/26.0.1410.43 Safari/537.1 ',
-                           'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; SLCC2; .NET CLR '
-                           '2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; InfoPath.2; '
-                           '.NET4.0C; .NET4.0E; QQBrowser/7.3.9825.400)',
-                           'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0 ',
-                           'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) '
-                           'Chrome/21.0.1180.92 Safari/537.1 LBBROWSER',
-                           'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; BIDUBrowser 2.x)',
-                           'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) '
-                           'Chrome/20.0.1132.11 TaoBrowser/3.0 Safari/536.11']
+        head_user_agent = [
+            'Mozilla/5.0 (Windows NT 6.3; WOW64; Trident/7.0; rv:11.0) like Gecko',
+            'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.95 '
+            'Safari/537.36',
+            'Mozilla/5.0 (Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR '
+            '3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; rv:11.0) like Gecko)',
+            'Mozilla/5.0 (Windows; U; Windows NT 5.2) Gecko/2008070208 Firefox/3.0.1',
+            'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070309 Firefox/2.0.0.3',
+            'Mozilla/5.0 (Windows; U; Windows NT 5.1) Gecko/20070803 Firefox/1.5.0.12',
+            'Opera/9.27 (Windows NT 5.2; U; zh-cn)',
+            'Mozilla/5.0 (Macintosh; PPC Mac OS X; U; en) Opera 8.0',
+            'Opera/8.0 (Macintosh; PPC Mac OS X; U; en)',
+            'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.12) Gecko/20080219 '
+            'Firefox/2.0.0.12 Navigator/9.0.0.6',
+            'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Win64; x64; Trident/4.0)',
+            'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0)',
+            'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; SLCC2; .NET CLR '
+            '2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; InfoPath.2; '
+            '.NET4.0C; .NET4.0E)',
+            'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) '
+            'Maxthon/4.0.6.2000 '
+            'Chrome/26.0.1410.43 Safari/537.1 ',
+            'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; SLCC2; .NET CLR '
+            '2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; InfoPath.2; '
+            '.NET4.0C; .NET4.0E; QQBrowser/7.3.9825.400)',
+            'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:21.0) Gecko/20100101 Firefox/21.0 ',
+            'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.1 (KHTML, like Gecko) '
+            'Chrome/21.0.1180.92 Safari/537.1 LBBROWSER',
+            'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 6.1; WOW64; Trident/6.0; BIDUBrowser 2.x)',
+            'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/536.11 (KHTML, like Gecko) '
+            'Chrome/20.0.1132.11 TaoBrowser/3.0 Safari/536.11'
+        ]
         jwc_header = {
-            'User-Agent': head_user_agent[random.randrange(0, len(head_user_agent))],
-            'Accept': '*/*',
-            'Accept-Encoding': 'gzip, deflate',
-            'Accept-Language': 'zh-CN,zh;q=0.9',
-            'Connection': 'keep-alive',
-            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-            'X-Requested-With': 'XMLHttpRequest;'
+            'User-Agent':
+            head_user_agent[random.randrange(0, len(head_user_agent))],
+            'Accept':
+            '*/*',
+            'Accept-Encoding':
+            'gzip, deflate',
+            'Accept-Language':
+            'zh-CN,zh;q=0.9',
+            'Connection':
+            'keep-alive',
+            'Content-Type':
+            'application/x-www-form-urlencoded; charset=UTF-8',
+            'X-Requested-With':
+            'XMLHttpRequest;'
         }
     else:
         return jwc_header

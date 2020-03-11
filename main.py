@@ -38,7 +38,8 @@ def login_jwc():
         else:
             input_id = save_id
             input_pw = save_pw
-        if io_manage.input_yes_or_no('\n你确定使用' + input_id + '学号进行登录吗？(更改登陆账号或密码登陆请输入N或者n)', True):
+        if io_manage.input_yes_or_no(
+                '\n你确定使用' + input_id + '学号进行登录吗？(更改登陆账号或密码登陆请输入N或者n)', True):
             user_url = jwc_login.jwc_login(jwc_session, input_id, input_pw)
             if user_url:
                 break
@@ -56,9 +57,11 @@ def login_jwc():
 
         choose_class_list = {}
 
-        choose_temp = io_manage.read_data(config.data_key_class_choose_list, choose_class_list)
+        choose_temp = io_manage.read_data(config.data_key_class_choose_list,
+                                          choose_class_list)
         if len(choose_temp) != 0:
-            if io_manage.input_yes_or_no('请问是否恢复上次抢课课程记录？（课程信息数据不同可能会导致选课失败）', False):
+            if io_manage.input_yes_or_no('请问是否恢复上次抢课课程记录？（课程信息数据不同可能会导致选课失败）',
+                                         False):
                 choose_class_list = choose_temp
             else:
                 if io_manage.input_yes_or_no('是否删除上次抢课课程记录？', True):
@@ -66,7 +69,7 @@ def login_jwc():
                         print('删除成功！\n')
 
         keep_login_thread = True
-        t = KeepLoginThread(keep_login, args=(jwc_session,))
+        t = KeepLoginThread(keep_login, args=(jwc_session, ))
         t.setDaemon(True)
         t.start()
 
@@ -87,7 +90,10 @@ def login_jwc():
 def keep_login(jwc_session):
     time.sleep(30)
     while keep_login_thread and True:
-        jwc_login.check_login(jwc_session, user_id, user_pw)
+        try:
+            jwc_login.check_login(jwc_session, user_id, user_pw)
+        except:
+            pass
         time.sleep(60)
 
 
